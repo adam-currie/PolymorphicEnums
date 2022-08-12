@@ -3,6 +3,7 @@
 #include <type_traits>
 #include <concepts>
 #include <algorithm>
+#include <string.h>
 
 template <auto N>
 struct CompileTimeString {
@@ -12,42 +13,34 @@ struct CompileTimeString {
     }
 };
 
+struct _EnumBase {};
 
-// template <typename... Ts>
-// struct D {
-//     static constexpr int value = 420;
-// };
-
-// template <>
-// struct D<> {
-//     static constexpr int value = 666;
-// };
-
-// #include <string>
-// #include <typeinfo>
-// template<CompileTimeString... Stringstypename T = int>
-// std::string f() {
-//     std::string s = typeid(T).name();
-//     return s;
-// }
-
-template<CompileTimeString... Values>
-struct Enum;
-
-template<>
-struct Enum<> {
-    static constexpr char const * const values[] = {};//todo:remove?
+template<CompileTimeString FirstValue, CompileTimeString... MoreValues>
+struct Enum : _EnumBase {
+    static constexpr char const * const values[] = {FirstValue.value, MoreValues.value...};
 };
 
-template<CompileTimeString... Values>
-struct Enum : Enum<> {
-    static constexpr char const * const values[] = {Values.value...};
-};
-
-template<typename Base, CompileTimeString... SubValues>
-concept SuperSet = std::is_base_of<Enum<>, Base>::value;//todo: check values are subset
-
-template<SuperSet Base, CompileTimeString... Values>
+template<std::derived_from<_EnumBase> Base, CompileTimeString FirstValue, CompileTimeString... MoreValues>
 struct Subset : Base {
-    static constexpr char const * const values[] = {Values.value...};
+    private:
+        template <size_t supersetN, size_t subsetN>
+        static constexpr bool isSubset(char const * const (&superset)[supersetN], char const * const (&subset)[subsetN]) {
+            for (const auto& subItem : subset) {
+                bool found = false;
+                for (const auto& superItem : superset) {
+                    if (0 == strcmp(subItem, superItem)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        static_assert((isSubset(Base::values, {FirstValue.value, MoreValues.value...})), "subset values not all present in the base set");
+
+    public:
+        static constexpr char const * const values[] = {FirstValue.value, MoreValues.value...};
 };

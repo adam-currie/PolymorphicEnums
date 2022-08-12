@@ -13,5 +13,11 @@ int main() {
     for (auto& c : LColor::values)
         std::cout << c << std::endl;
 
+    std::cout << std::endl;
+
+    for (auto& c : Subset<Color, "yellow">::values)
+        std::cout << c << std::endl;
+
+
     return 0;
 }
