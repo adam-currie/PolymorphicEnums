@@ -16,7 +16,7 @@ int main() {
 
     int ii = 420;
 
-    auto sw = L3Color::SwitchAll(
+    auto sw = L2Color::SwitchAll(
         Case<"red">([](){
             std::cout << "case: red" << std::endl;
         }), 

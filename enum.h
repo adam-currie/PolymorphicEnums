@@ -72,6 +72,36 @@ class Enum {
                     return index; else ++index;
             return INVALID_INDEX;
         };
+
+        template<typename EnumT, typename... Cases>
+        requires (std::is_base_of_v<Enum<>, EnumT>)
+        class SwitchAll {
+            static constexpr size_t resortingTable[EnumT::COUNT] = {indexOf(EnumT::sorted.values, Cases::V)...};
+
+            static consteval bool noDupes() {
+                size_t occurrenceTable[EnumT::COUNT] = {0};
+                for (int i=0; i<EnumT::COUNT; ++i)
+                    if (occurrenceTable[resortingTable[i]]++ != 0)
+                        return false;
+                return true;
+            }
+
+            static_assert(sizeof...(Cases) == EnumT::COUNT, "wrong number of cases");
+            static_assert(noDupes(), "duplicate case values detected");
+            
+            std::function<void()> caseFuncs[EnumT::COUNT];
+
+            public:
+                SwitchAll(Cases... cases) { //todo: return type, autodeduced, compile time checked to be the same for for every func in every case stuct, disallow case constructor with 0 args when ret type is not void
+                    std::function<void()> fs[EnumT::COUNT] = {(cases.f)...};
+                    for (int i=0; i<EnumT::COUNT; ++i)
+                        caseFuncs[resortingTable[i]] = fs[i];
+                }
+
+                void operator()(EnumT e) const {
+                    caseFuncs[e.i]();
+                }
+        };
 };
 
 template<CompileTimeString Value>
@@ -85,6 +115,7 @@ struct Case {
 
 template<CompileTimeString FirstValue, CompileTimeString... MoreValues>
 class Enum<FirstValue, MoreValues...> : private Enum<> {
+    friend class Enum<>;
     protected:
         static constexpr size_t COUNT = sizeof...(MoreValues)+1;
         static constexpr auto sorted = Enum<>::SortedUniqueArray<const char *, COUNT, strcmp>({FirstValue.value, MoreValues.value...});
@@ -111,33 +142,7 @@ class Enum<FirstValue, MoreValues...> : private Enum<> {
         //todo: switch (not all) allow you to have some cases missing, default option should be allowed as well, if using every possible case, print suggestion at compile time to maybe use SwitchAll instead
 
         template<typename... Cases>
-        class SwitchAll {
-            static constexpr size_t resortingTable[COUNT] = {indexOf(Cases::V)...};
-
-            static consteval bool noDupes() {
-                size_t occurrenceTable[COUNT] = {0};
-                for (int i=0; i<COUNT; ++i)
-                    if (occurrenceTable[resortingTable[i]]++ != 0)
-                        return false;
-                return true;
-            }
-
-            static_assert(sizeof...(Cases) == COUNT, "wrong number of cases");
-            static_assert(noDupes(), "duplicate case values detected");
-            
-            std::function<void()> caseFuncs[COUNT];
-
-            public:
-                SwitchAll(Cases... cases) { //todo: return type, autodeduced, compile time checked to be the same for for every func in every case stuct, disallow case constructor with 0 args when ret type is not void
-                    std::function<void()> fs[COUNT] = {(cases.f)...};
-                    for (int i=0; i<COUNT; ++i)
-                        caseFuncs[resortingTable[i]] = fs[i];
-                }
-
-                void operator()(Enum<FirstValue, MoreValues...> e) const {
-                    caseFuncs[e.i]();
-                }
-        };
+        using SwitchAll = Enum<>::SwitchAll<Enum<FirstValue, MoreValues...>, Cases...>;
 };
 
 template<class Base, CompileTimeString FirstValue, CompileTimeString... MoreValues>
@@ -154,4 +159,6 @@ class Subset : public Base {
                 throw "value not present in subset";
         }
 
+        template<typename... Cases>
+        using SwitchAll = Enum<>::SwitchAll<Enum<FirstValue, MoreValues...>, Cases...>;
 };
