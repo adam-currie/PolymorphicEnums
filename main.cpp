@@ -11,29 +11,32 @@ int main() {
     auto a = Color("green");
     Color aa = "green";
     auto b = LColor("green");
-    auto c = L2Color("green");
-    auto d = L3Color("gre5en");
+    const auto c = L2Color("green");
+    auto d = L3Color("green");
 
-    switch (Color("purple")){
-        case Shade("offWhite"):
-        case Color("red"):
-            std::cout << "r" << std::endl;
-            break;
-        case Color("blue"):
-            std::cout << "b" << std::endl;
-            break;
-        case Color("green"):
-            std::cout << "g" << std::endl;
-            break;
-        case Color("yellow"):
-            std::cout << "y" << std::endl;
-            break;
-        case Color("purple"):
-            std::cout << "p" << std::endl;
-            break;
-    }
+    int ii = 420;
 
-    std::cout << (b == d) << std::endl;
+    auto sw = L3Color::SwitchAll(
+        Case<"red">([](){
+            std::cout << "case: red" << std::endl;
+        }), 
+        Case<"blue">([](){
+            std::cout << "case: blue" << std::endl;
+        }), 
+        Case<"green">([](){
+            std::cout << "case: green" << std::endl;
+        }), 
+        Case<"yellow">([](){
+            std::cout << "case: yellow" << std::endl;
+        }), 
+        Case<"purple">()
+    );
+
+    sw("blue");
+    sw("green");
+    sw("purple");
+    sw("red");
+    sw("yellow");
 
     return 0;
 }
