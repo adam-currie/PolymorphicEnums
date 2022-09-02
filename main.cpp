@@ -1,21 +1,22 @@
 #include "enum.h"
 #include <iostream>
 
+using namespace PolymorphicEnums;
+
 int main() {
     typedef Enum<"red", "blue", "green", "yellow", "purple"> Color;
-    typedef Enum<"black", "white", "gray", "darkGray", "lightGray", "offWhite"> Shade;
-    typedef Subset<Color, "red", "green"> LColor;
-    typedef Subset<Color, "green", "yellow", "purple"> L2Color;
-    typedef Subset<L2Color, "green", "yellow"> L3Color;
+    typedef Subset<Color, "red", "green"> Color1;
+    typedef Subset<Color, "green", "yellow", "purple"> Color2;
+    typedef Subset<Color2, "green", "yellow"> Color3;
     
     auto a = Color("green");
     Color aa = "green";
-    auto b = LColor("green");
-    const auto c = L2Color("green");
-    auto d = L3Color("green");
+    auto b = Color1("green");
+    const auto c = Color2("green");
+    auto d = Color3("green");
 
     //the order is worked out at compile time and then the case functions are reordered in N steps with no comparisons at construction time
-    auto sw = L2Color::SwitchAll(
+    auto sw = Color::SwitchAll(
         Case<"red">([](){
             std::cout << "case: red" << std::endl;
         }), 
@@ -36,6 +37,20 @@ int main() {
     sw("purple");
     sw("red");
     sw("yellow");
+
+    auto sw2 = Color2::SwitchAll(
+        //this, would fail at compile time 
+        // Case<"red">([](){
+        //     std::cout << "case: red" << std::endl;
+        // }),  
+        Case<"green">([](){
+            std::cout << "case: green" << std::endl;
+        }), 
+        Case<"yellow">([](){
+            std::cout << "case: yellow" << std::endl;
+        }), 
+        Case<"purple">()
+    );
 
     return 0;
 }
