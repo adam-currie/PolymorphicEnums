@@ -14,8 +14,7 @@ int main() {
     const auto c = L2Color("green");
     auto d = L3Color("green");
 
-    int ii = 420;
-
+    //the order is worked out at compile time and then the case functions are reordered in N steps with no comparisons at construction time
     auto sw = L2Color::SwitchAll(
         Case<"red">([](){
             std::cout << "case: red" << std::endl;
